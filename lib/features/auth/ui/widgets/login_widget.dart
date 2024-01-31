@@ -1,12 +1,18 @@
+import 'package:ecommerce_app/common/bloc/common_state.dart';
 import 'package:ecommerce_app/common/buttons/custom_rounded_button.dart';
 import 'package:ecommerce_app/common/custom_theme.dart';
+import 'package:ecommerce_app/common/routes.dart';
 import 'package:ecommerce_app/common/textfield/custom_textfield.dart';
+import 'package:ecommerce_app/features/auth/ui/cubit/login_cubit.dart';
 import 'package:ecommerce_app/features/auth/ui/screens/signup_page.dart';
 import 'package:ecommerce_app/features/dashboard/ui/screens/dashboard_screens.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:loading_overlay/loading_overlay.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:page_transition/page_transition.dart';
 
 class LoginWidgets extends StatefulWidget {
@@ -22,15 +28,29 @@ class _LoginWidgetsState extends State<LoginWidgets> {
 
   bool _isLoading = false;
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
 
   @override
   Widget build(BuildContext context) {
     final _theme = Theme.of(context);
     final _textTheme = _theme.textTheme;
 
-    return LoadingOverlay(
-      isLoading: _isLoading,
+    return BlocListener<LoginCubit, CommonState>(
+      listener: (context, state) {
+        if (state is CommonLoadingState) {
+          context.loaderOverlay.show();
+        } else {
+          context.loaderOverlay.hide();
+        }
+
+        if (state is CommonSuccessState) {
+          Fluttertoast.showToast(msg: "Login SuccessFull");
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil(Routes.homePage, (route) => false);
+        } else if (state is CommonErrorState) {
+          Fluttertoast.showToast(msg: "Login Failed");
+        }
+      },
       child: Scaffold(
         appBar: AppBar(backgroundColor: CustomTheme.primaryColor),
         body: SingleChildScrollView(
@@ -38,12 +58,13 @@ class _LoginWidgetsState extends State<LoginWidgets> {
             padding: const EdgeInsets.symmetric(
               horizontal: CustomTheme.horizontalPadding,
             ),
-            child: Form(
+            child: FormBuilder(
               key: _formKey,
               child: Column(
                 children: [
                   const SizedBox(height: 20),
                   CustomTextField(
+                    fieldName: "email",
                     label: "Email Address",
                     hintText: "Enter Email Address",
                     controller: _emailController,
@@ -60,6 +81,7 @@ class _LoginWidgetsState extends State<LoginWidgets> {
                     },
                   ),
                   CustomTextField(
+                    fieldName: "password",
                     label: "Password",
                     hintText: "Enter Password",
                     controller: _passwordController,
@@ -76,15 +98,13 @@ class _LoginWidgetsState extends State<LoginWidgets> {
                   ),
                   CustomRoundedButtom(
                     title: "LOGIN",
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        PageTransition(
-                          child: DashboardScreens(),
-                          type: PageTransitionType.fade,
-                        ),
-                        (route) => false,
-                      );
-                      // if (_formKey.currentState!.validate()) {}
+                    onPressed: () async{
+                      if (_formKey.currentState!.saveAndValidate()) {
+                       final _ =await context.read<LoginCubit>().login(
+                            email: _formKey.currentState!.value["email"],
+                            password: _formKey.currentState!.value["password"]);
+
+                      }
                     },
                   ),
                   const SizedBox(height: 20),

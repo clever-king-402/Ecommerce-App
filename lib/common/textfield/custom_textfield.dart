@@ -1,7 +1,9 @@
 import 'package:ecommerce_app/common/custom_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class CustomTextField extends StatelessWidget {
+  final String fieldName;
   final String label;
   final String hintText;
   final TextInputType? textInputType;
@@ -14,6 +16,7 @@ class CustomTextField extends StatelessWidget {
 
   const CustomTextField({
     super.key,
+    required this.fieldName,
     required this.label,
     required this.hintText,
     this.bottomPadding = 16,
@@ -44,7 +47,7 @@ class CustomTextField extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Container(
-            child: TextFormField(
+            child: FormBuilderTextField(
               style: _textTheme.headline6!.copyWith(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -98,7 +101,7 @@ class CustomTextField extends StatelessWidget {
                   size: 26,
                   color: CustomTheme.gray,
                 ),
-              ),
+              ), name: fieldName,
             ),
           ),
         ],

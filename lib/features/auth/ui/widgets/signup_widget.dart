@@ -1,10 +1,16 @@
+import 'package:ecommerce_app/common/bloc/common_state.dart';
 import 'package:ecommerce_app/common/buttons/custom_rounded_button.dart';
 import 'package:ecommerce_app/common/custom_theme.dart';
+import 'package:ecommerce_app/common/routes.dart';
 import 'package:ecommerce_app/common/textfield/custom_textfield.dart';
+import 'package:ecommerce_app/features/auth/ui/cubit/register_cubit.dart';
+import 'package:ecommerce_app/features/auth/ui/model/user.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:loading_overlay/loading_overlay.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class SignupWidgets extends StatefulWidget {
   const SignupWidgets({Key? key}) : super(key: key);
@@ -22,7 +28,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
 
   bool _isLoading = false;
 
@@ -31,11 +37,20 @@ class _SignupWidgetsState extends State<SignupWidgets> {
     final _theme = Theme.of(context);
     final _textTheme = _theme.textTheme;
 
-    return LoadingOverlay(
-      isLoading: _isLoading,
+    return BlocListener<RegisterCubit, CommonState>(
+      listener: (context, state) {
+        if (state is CommonErrorState) {
+          print(state.message);
+          Fluttertoast.showToast(msg: state.message);
+        } else if (state is CommonSuccessState) {
+          Fluttertoast.showToast(msg: "Registered Successfully");
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil(Routes.homePage, (route) => false);
+        }
+      },
       child: Scaffold(
         appBar: AppBar(backgroundColor: CustomTheme.primaryColor),
-        body: Form(
+        body: FormBuilder(
           key: _formKey,
           child: SingleChildScrollView(
             child: Container(
@@ -46,6 +61,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                 children: [
                   const SizedBox(height: 20),
                   CustomTextField(
+                    fieldName: "name",
                     label: "Full name",
                     hintText: "Enter Full Name",
                     controller: _fullNameController,
@@ -57,6 +73,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                     },
                   ),
                   CustomTextField(
+                    fieldName: "phone",
                     label: "Phone Number",
                     hintText: "Enter Phone Number",
                     controller: _phoneNumberController,
@@ -69,6 +86,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                     },
                   ),
                   CustomTextField(
+                    fieldName: "address",
                     label: "Address",
                     hintText: "Enter Address",
                     controller: _addressController,
@@ -80,6 +98,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                     },
                   ),
                   CustomTextField(
+                    fieldName: "email",
                     label: "Email Address",
                     hintText: "Enter Email Address",
                     controller: _emailController,
@@ -96,6 +115,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                     },
                   ),
                   CustomTextField(
+                    fieldName: "password",
                     label: "Password",
                     hintText: "Enter Password",
                     controller: _passwordController,
@@ -111,6 +131,7 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                     },
                   ),
                   CustomTextField(
+                    fieldName: "cpassword",
                     label: "Confirm Password",
                     hintText: "Enter Confirm Password",
                     controller: _confirmPasswordController,
@@ -129,8 +150,18 @@ class _SignupWidgetsState extends State<SignupWidgets> {
                   ),
                   CustomRoundedButtom(
                     title: "SIGNUP",
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {}
+                    onPressed: () async {
+                      if (_formKey.currentState!.saveAndValidate()) {
+                        final inputData = User(
+                            fullName: _formKey.currentState!.value["name"],
+                            password: _formKey.currentState!.value["password"],
+                            phoneNumber: _formKey.currentState!.value["phone"],
+                            address: _formKey.currentState!.value["address"],
+                            email: _formKey.currentState!.value["email"]);
+                        final dataValid = context
+                            .read<RegisterCubit>()
+                            .registerUser(user: inputData);
+                      }
                     },
                   ),
                   const SizedBox(height: 20),
